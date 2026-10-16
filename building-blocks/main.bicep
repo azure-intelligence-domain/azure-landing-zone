@@ -24,6 +24,8 @@ type buildingBlock = {
   owner: string
   @description('Its resource groups. Default: one group named after the block, deleted by the kill switch.')
   groups: group[]?
+  @description('true: also a runtime identity id-intplat-<name>-runtime for its Function or Logic App (ADR 0014).')
+  runtimeIdentity: bool?
 }
 
 param blocks buildingBlock[]
@@ -70,6 +72,22 @@ module identities '../modules/github-identity.bicep' = [
   }
 ]
 
+module runtimeIdentities '../modules/runtime-identity.bicep' = [
+  for block in filter(blocks, b => b.?runtimeIdentity ?? false): {
+    name: 'runtime-identity-${block.name}'
+    scope: resourceGroup('rg-intplat-identities')
+    params: {
+      name: 'id-intplat-${block.name}-runtime'
+      location: location
+      tags: {
+        project: 'ai-intelligence-domain'
+        component: 'identities'
+        owner: block.owner
+      }
+    }
+  }
+]
+
 module access '../modules/contributor.bicep' = [
   for (g, i) in groupsOfBlocks: {
     name: 'access-${g.name}'
@@ -89,6 +107,15 @@ module identityLookup '../modules/reader.bicep' = [
       principalId: identities[i].outputs.principalId
       reason: 'Building block ${block.name}: look up other building blocks\' identities.'
     }
+  }
+]
+
+output runtimeIdentities array = [
+  for (block, i) in filter(blocks, b => b.?runtimeIdentity ?? false): {
+    block: block.name
+    name: 'id-intplat-${block.name}-runtime'
+    clientId: runtimeIdentities[i].outputs.clientId
+    principalId: runtimeIdentities[i].outputs.principalId
   }
 ]
 

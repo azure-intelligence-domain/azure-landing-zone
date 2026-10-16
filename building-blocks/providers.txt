@@ -6,3 +6,5 @@ Microsoft.EventGrid
 Microsoft.ServiceBus
 Microsoft.OperationalInsights
 Microsoft.Insights
+Microsoft.DocumentDB
+Microsoft.Web

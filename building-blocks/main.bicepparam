@@ -19,4 +19,24 @@ param blocks = [
       { name: 'tap', keep: true } // the tap's history survives the kill switch (ADR 0011)
     ]
   }
+  {
+    name: 'backend-systems'
+    repo: 'backend-systems'
+    repoId: '1422617211'
+    owner: 'platform-team'
+  }
+  {
+    name: 'system-api-salesforce'
+    repo: 'system-api-salesforce'
+    repoId: '1422617268'
+    owner: 'sales-team'
+    runtimeIdentity: true
+  }
+  {
+    name: 'process-api-order'
+    repo: 'process-api-order'
+    repoId: '1422595726'
+    owner: 'order-team'
+    runtimeIdentity: true
+  }
 ]
