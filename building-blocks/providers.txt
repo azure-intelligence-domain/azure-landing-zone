@@ -8,3 +8,4 @@ Microsoft.OperationalInsights
 Microsoft.Insights
 Microsoft.DocumentDB
 Microsoft.Web
+Microsoft.Logic
