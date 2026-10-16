@@ -4,7 +4,7 @@
 
 targetScope = 'subscription'
 
-import { contributor, reader, rbacAdministrator, dataRoles, onlyRoles } from '../modules/roles.bicep'
+import { contributor, reader, rbacAdministrator, managedIdentityOperator, dataRoles, onlyRoles } from '../modules/roles.bicep'
 
 // GitHub puts immutable numeric IDs in the OIDC subject (org@id/repo@id), so a
 // deleted and recreated repository with the same name does not get access.
@@ -51,7 +51,7 @@ module identity '../modules/github-identity.bicep' = {
 
 // What the landing zone may hand out: Contributor and Reader, the (constrained) role
 // administrator for building blocks, and the data-plane roles. Never Owner.
-var grantableRoles = concat([contributor, reader, rbacAdministrator], dataRoles)
+var grantableRoles = concat([contributor, reader, rbacAdministrator, managedIdentityOperator], dataRoles)
 
 // Creates resource groups, guardrails and per-building-block resources.
 resource contributorAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {

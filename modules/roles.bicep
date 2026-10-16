@@ -9,6 +9,11 @@ var reader = 'acdd72a7-3385-48ef-bd42-f606fba81ae7'
 @export()
 var rbacAdministrator = 'f58310d9-a9f6-439a-9e8d-f62e7b41a168' // Role Based Access Control Administrator
 
+// Lets a deploy identity attach its block's runtime identity to a Function or Logic App, granted
+// on that one identity only.
+@export()
+var managedIdentityOperator = 'f1a07417-d97a-45cb-824c-7a7467783830'
+
 // Data-plane roles: send to a topic, read a queue, write the tap. A building block may grant
 // these within its own resource groups, and nothing else.
 @export()

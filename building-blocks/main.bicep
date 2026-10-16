@@ -78,6 +78,7 @@ module runtimeIdentities '../modules/runtime-identity.bicep' = [
     scope: resourceGroup('rg-intplat-identities')
     params: {
       name: 'id-intplat-${block.name}-runtime'
+      deployPrincipalId: identities[indexOf(map(blocks, b => b.name), block.name)].outputs.principalId
       location: location
       tags: {
         project: 'ai-intelligence-domain'
