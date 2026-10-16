@@ -5,7 +5,7 @@ param name string
 param location string
 param tags object
 
-@description('GitHub OIDC subject, e.g. repo:<org>/<repo>:environment:<env>.')
+@description('GitHub OIDC subject, e.g. repo:<org>@<orgId>/<repo>@<repoId>:environment:<env>.')
 param subject string
 
 resource identity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {

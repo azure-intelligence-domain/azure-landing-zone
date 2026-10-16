@@ -4,11 +4,19 @@
 
 targetScope = 'subscription'
 
+// GitHub puts immutable numeric IDs in the OIDC subject (org@id/repo@id), so a
+// deleted and recreated repository with the same name does not get access.
 @description('GitHub organisation that owns the repository.')
 param githubOrg string = 'azure-intelligence-domain'
 
+@description('Numeric ID of the GitHub organisation (gh api orgs/<org> --jq .id).')
+param githubOrgId string = '343586903'
+
 @description('Repository allowed to use this identity.')
 param githubRepo string = 'azure-landing-zone'
+
+@description('Numeric ID of the repository (gh api repos/<org>/<repo> --jq .id).')
+param githubRepoId string = '1422302934'
 
 @description('GitHub environment the deploy job runs in. Restricted to the main branch.')
 param githubEnvironment string = 'azure'
@@ -35,7 +43,7 @@ module identity 'modules/github-identity.bicep' = {
     name: 'id-intplat-landing-zone'
     location: location
     tags: tags
-    subject: 'repo:${githubOrg}/${githubRepo}:environment:${githubEnvironment}'
+    subject: 'repo:${githubOrg}@${githubOrgId}/${githubRepo}@${githubRepoId}:environment:${githubEnvironment}'
   }
 }
 

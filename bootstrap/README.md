@@ -7,7 +7,7 @@ After this, everything in this repository is deployed by GitHub Actions.
 |---|---|---|
 | Resource group | `rg-intplat-identities` | Holds all deploy identities. **Not** tagged `costguard=delete`, so the pipelines can rebuild after a kill switch run. |
 | Managed identity | `id-intplat-landing-zone` | What the `azure-landing-zone` pipeline logs in as. |
-| Federated credential | `github` | Trusts only `repo:azure-intelligence-domain/azure-landing-zone:environment:azure`. |
+| Federated credential | `github` | Trusts only `repo:azure-intelligence-domain@343586903/azure-landing-zone@1422302934:environment:azure`. GitHub includes the numeric IDs, so a recreated repository with the same name gets no access. |
 | Role | Contributor on the subscription | Creates guardrails and building-block resource groups. |
 | Role | RBAC Administrator, **constrained** | May grant or remove the **Contributor role only**. It can never make anything Owner, including itself. |
 
