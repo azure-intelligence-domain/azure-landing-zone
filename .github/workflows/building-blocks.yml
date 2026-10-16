@@ -52,6 +52,12 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Acquire Event Grid token (for the deployment event)
+        run: |
+          token=$(az account get-access-token --resource https://eventgrid.azure.net --query accessToken -o tsv)
+          echo "::add-mask::$token"
+          echo "EVENTGRID_TOKEN=$token" >> "$GITHUB_ENV"
+
       - name: Register resource providers
         run: |
           grep -vE '^\s*(#|$)' building-blocks/providers.txt | while read -r provider; do
@@ -69,3 +75,12 @@ jobs:
           az deployment sub create --name building-blocks --location belgiumcentral \
             --template-file building-blocks/main.bicep --parameters building-blocks/main.bicepparam \
             --query "properties.outputs.identities.value" -o table
+
+      - name: Deployment event
+        if: always()
+        uses: azure-intelligence-domain/integration-platform/.github/actions/deployment-event@v1.1.0
+        with:
+          token: ${{ env.EVENTGRID_TOKEN }}
+          component: building-blocks
+          version: ${{ github.sha }}
+          status: ${{ job.status }}

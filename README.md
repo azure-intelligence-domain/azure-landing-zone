@@ -6,10 +6,10 @@ Owned by the **platform team**. Deployed before anything else.
 
 | Folder | What | Status |
 |---|---|---|
-| [`bootstrap/`](bootstrap/) | The landing zone's own deploy identity (GitHub OIDC). Deployed once by hand. | ✅ deployed |
+| [`bootstrap/`](bootstrap/) | The landing zone's own deploy identity (GitHub OIDC), and the Entra application of the agent gateway ([`agent-gateway-app.sh`](bootstrap/agent-gateway-app.sh)). Run once by hand. | ✅ deployed |
 | [`guardrails/`](guardrails/) | €10/month budget, alerts and the kill switch. Deployed by the [`guardrails`](.github/workflows/guardrails.yml) pipeline. | ✅ deployed |
 | [`building-blocks/`](building-blocks/) | Per building block: resource group (tagged `costguard=delete`) and a deploy identity with Contributor on that group only. One entry in [`main.bicepparam`](building-blocks/main.bicepparam) per block. Deployed by the [`building-blocks`](.github/workflows/building-blocks.yml) pipeline. | ✅ eventcatalog |
-| [`modules/`](modules/) | Shared Bicep modules: GitHub OIDC identity, Contributor on a resource group | — |
+| [`modules/`](modules/) | Shared Bicep modules. [`roles.bicep`](modules/roles.bicep) lists every role the platform hands out: building blocks get Contributor plus a role administrator limited to eight data-plane roles, on their own resource groups only. | — |
 
 ```mermaid
 flowchart TB
