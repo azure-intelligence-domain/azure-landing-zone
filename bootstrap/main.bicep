@@ -4,6 +4,8 @@
 
 targetScope = 'subscription'
 
+import { contributor, reader, rbacAdministrator, dataRoles, onlyRoles } from '../modules/roles.bicep'
+
 // GitHub puts immutable numeric IDs in the OIDC subject (org@id/repo@id), so a
 // deleted and recreated repository with the same name does not get access.
 @description('GitHub organisation that owns the repository.')
@@ -47,31 +49,32 @@ module identity '../modules/github-identity.bicep' = {
   }
 }
 
-var contributorRoleId = 'b24988ac-6180-42a0-ab88-20f7382dd24c'
-var rbacAdminRoleId = 'f58310d9-a9f6-439a-9e8d-f62e7b41a168' // Role Based Access Control Administrator
+// What the landing zone may hand out: Contributor and Reader, the (constrained) role
+// administrator for building blocks, and the data-plane roles. Never Owner.
+var grantableRoles = concat([contributor, reader, rbacAdministrator], dataRoles)
 
 // Creates resource groups, guardrails and per-building-block resources.
-resource contributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(subscription().id, 'landing-zone', contributorRoleId)
+resource contributorAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(subscription().id, 'landing-zone', contributor)
   properties: {
     principalId: identity.outputs.principalId
     principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', contributorRoleId)
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', contributor)
     description: 'azure-landing-zone pipeline: deploys guardrails and building-block resource groups.'
   }
 }
 
-// May grant and remove ONLY the Contributor role, so it can give each building
-// block rights on its own resource group but can never escalate to Owner.
+// May grant and remove ONLY the grantable roles above, so it can give each building block
+// rights on its own resource groups but can never grant Owner.
 resource rbacAdmin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(subscription().id, 'landing-zone', rbacAdminRoleId)
+  name: guid(subscription().id, 'landing-zone', rbacAdministrator)
   properties: {
     principalId: identity.outputs.principalId
     principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', rbacAdminRoleId)
-    description: 'azure-landing-zone pipeline: may assign the Contributor role only.'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', rbacAdministrator)
+    description: 'azure-landing-zone pipeline: may assign the grantable roles only (never Owner).'
     conditionVersion: '2.0'
-    condition: '((!(ActionMatches{\'Microsoft.Authorization/roleAssignments/write\'})) OR (@Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {${contributorRoleId}})) AND ((!(ActionMatches{\'Microsoft.Authorization/roleAssignments/delete\'})) OR (@Resource[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {${contributorRoleId}}))'
+    condition: onlyRoles(grantableRoles)
   }
 }
 

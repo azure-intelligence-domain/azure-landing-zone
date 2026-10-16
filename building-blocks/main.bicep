@@ -1,11 +1,20 @@
-// Building blocks: per block a resource group and a deploy identity with rights on that group only.
-// Adding a building block is one entry in main.bicepparam (ADR 0006).
+// Building blocks: per block one or more resource groups and one deploy identity with, on those
+// groups only, Contributor plus a role administrator limited to data-plane roles (ADR 0006, 0011).
+// Adding a building block is one entry in main.bicepparam.
 
 targetScope = 'subscription'
 
-@description('A building block: one repository, one resource group, one deploy identity.')
+@description('A resource group of a building block.')
+type group = {
+  @description('Resource group name suffix: rg-intplat-<name>.')
+  name: string
+  @description('true: never deleted by the kill switch (no costguard tag). For data that must survive, like the tap.')
+  keep: bool
+}
+
+@description('A building block: one repository, one deploy identity, its own resource groups.')
 type buildingBlock = {
-  @description('Short name, used in resource names: rg-intplat-<name>, id-intplat-<name>.')
+  @description('Short name, used in resource names: id-intplat-<name>.')
   name: string
   @description('GitHub repository that deploys this block.')
   repo: string
@@ -13,6 +22,8 @@ type buildingBlock = {
   repoId: string
   @description('Owning team, as in the EventCatalog teams.')
   owner: string
+  @description('Its resource groups. Default: one group named after the block, deleted by the kill switch.')
+  groups: group[]?
 }
 
 param blocks buildingBlock[]
@@ -21,16 +32,23 @@ param githubOrgId string = '343586903'
 param githubEnvironment string = 'azure'
 param location string = 'belgiumcentral'
 
+var groupsOfBlocks = flatten(map(range(0, length(blocks)), i => map(
+  blocks[i].?groups ?? [{ name: blocks[i].name, keep: false }],
+  g => { block: i, name: g.name, keep: g.keep }
+)))
+
 resource groups 'Microsoft.Resources/resourceGroups@2024-03-01' = [
-  for block in blocks: {
-    name: 'rg-intplat-${block.name}'
+  for g in groupsOfBlocks: {
+    name: 'rg-intplat-${g.name}'
     location: location
-    tags: {
-      project: 'ai-intelligence-domain'
-      component: block.name
-      owner: block.owner
-      costguard: 'delete' // the kill switch may delete it; the pipelines rebuild it
-    }
+    tags: union(
+      {
+        project: 'ai-intelligence-domain'
+        component: blocks[g.block].name
+        owner: blocks[g.block].owner
+      },
+      g.keep ? {} : { costguard: 'delete' } // the kill switch may delete it; the pipelines rebuild it
+    )
   }
 ]
 
@@ -53,11 +71,23 @@ module identities '../modules/github-identity.bicep' = [
 ]
 
 module access '../modules/contributor.bicep' = [
-  for (block, i) in blocks: {
-    name: 'access-${block.name}'
+  for (g, i) in groupsOfBlocks: {
+    name: 'access-${g.name}'
     scope: resourceGroup(groups[i].name)
     params: {
+      principalId: identities[g.block].outputs.principalId
+    }
+  }
+]
+
+// Lets each block look up other blocks' identities, e.g. to grant a consumer its queue.
+module identityLookup '../modules/reader.bicep' = [
+  for (block, i) in blocks: {
+    name: 'identity-lookup-${block.name}'
+    scope: resourceGroup('rg-intplat-identities')
+    params: {
       principalId: identities[i].outputs.principalId
+      reason: 'Building block ${block.name}: look up other building blocks\' identities.'
     }
   }
 ]
@@ -66,7 +96,7 @@ output identities array = [
   for (block, i) in blocks: {
     block: block.name
     repo: block.repo
-    resourceGroup: groups[i].name
     clientId: identities[i].outputs.clientId
+    principalId: identities[i].outputs.principalId
   }
 ]
