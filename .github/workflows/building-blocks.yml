@@ -1,0 +1,71 @@
+name: building-blocks
+
+# Per building block: a resource group (tagged costguard=delete) and a deploy identity with
+# Contributor on that group only. Pull requests compile; main registers the resource providers
+# the blocks need, previews and deploys, through the GitHub environment "azure" (OIDC).
+
+on:
+  pull_request:
+    paths: ['building-blocks/**', 'modules/**', '.github/workflows/building-blocks.yml']
+  push:
+    branches: [main]
+    paths: ['building-blocks/**', 'modules/**', '.github/workflows/building-blocks.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: building-blocks-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Compile and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile Bicep (any warning fails the build)
+        run: |
+          az bicep install --only-show-errors
+          bicep="$HOME/.azure/bin/bicep"
+          diagnostics=$( { "$bicep" build building-blocks/main.bicep --stdout >/dev/null; "$bicep" build-params building-blocks/main.bicepparam --stdout >/dev/null; } 2>&1 || true)
+          if echo "$diagnostics" | grep -qE ': (Warning|Error) '; then echo "$diagnostics"; exit 1; fi
+          echo "✅ building-blocks"
+
+  deploy:
+    name: Register providers, preview and deploy
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: azure
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Register resource providers
+        run: |
+          grep -vE '^\s*(#|$)' building-blocks/providers.txt | while read -r provider; do
+            az provider register --namespace "$provider" --wait --only-show-errors
+            echo "✅ $provider: $(az provider show --namespace "$provider" --query registrationState -o tsv)"
+          done
+
+      - name: What-if
+        run: |
+          az deployment sub what-if --name building-blocks --location belgiumcentral \
+            --template-file building-blocks/main.bicep --parameters building-blocks/main.bicepparam
+
+      - name: Deploy
+        run: |
+          az deployment sub create --name building-blocks --location belgiumcentral \
+            --template-file building-blocks/main.bicep --parameters building-blocks/main.bicepparam \
+            --query "properties.outputs.identities.value" -o table

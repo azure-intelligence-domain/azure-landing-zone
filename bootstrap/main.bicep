@@ -37,7 +37,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
   tags: tags
 }
 
-module identity 'modules/github-identity.bicep' = {
+module identity '../modules/github-identity.bicep' = {
   scope: rg
   params: {
     name: 'id-intplat-landing-zone'

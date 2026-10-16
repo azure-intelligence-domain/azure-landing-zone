@@ -6,7 +6,7 @@ name: guardrails
 
 on:
   pull_request:
-    paths: ['guardrails/**', 'bootstrap/**', '.github/workflows/guardrails.yml']
+    paths: ['guardrails/**', 'bootstrap/**', 'modules/**', '.github/workflows/guardrails.yml']
   push:
     branches: [main]
     paths: ['guardrails/**', '.github/workflows/guardrails.yml']

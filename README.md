@@ -8,7 +8,8 @@ Owned by the **platform team**. Deployed before anything else.
 |---|---|---|
 | [`bootstrap/`](bootstrap/) | The landing zone's own deploy identity (GitHub OIDC). Deployed once by hand. | ✅ deployed |
 | [`guardrails/`](guardrails/) | €10/month budget, alerts and the kill switch. Deployed by the [`guardrails`](.github/workflows/guardrails.yml) pipeline. | ✅ deployed |
-| `building-blocks/` | Per building block: resource group (tagged `costguard=delete`) and a deploy identity with rights on that group only | ⏳ |
+| [`building-blocks/`](building-blocks/) | Per building block: resource group (tagged `costguard=delete`) and a deploy identity with Contributor on that group only. One entry in [`main.bicepparam`](building-blocks/main.bicepparam) per block. Deployed by the [`building-blocks`](.github/workflows/building-blocks.yml) pipeline. | ✅ eventcatalog |
+| [`modules/`](modules/) | Shared Bicep modules: GitHub OIDC identity, Contributor on a resource group | — |
 
 ```mermaid
 flowchart TB
