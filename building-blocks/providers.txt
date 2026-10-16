@@ -1,3 +1,8 @@
 # Resource providers the building blocks need. Registered by the building-blocks pipeline,
 # because a block's own identity has no subscription-level rights.
 Microsoft.Storage
+Microsoft.ApiManagement
+Microsoft.EventGrid
+Microsoft.ServiceBus
+Microsoft.OperationalInsights
+Microsoft.Insights

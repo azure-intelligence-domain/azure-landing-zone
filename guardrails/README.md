@@ -8,7 +8,7 @@ Deployed **once per subscription, before anything else**.
 | Resource group | `rg-intplat-guardrails` | Holds the kill switch. Not tagged for deletion. |
 | Budget | `budget-intplat-monthly` | €10/month. Email at 50% and 80% actual, 100% forecast. Kill switch at 100% actual. |
 | Action group | `ag-intplat-killswitch` | Emails the owner and calls the kill switch. |
-| Logic App (Consumption) | `logic-intplat-killswitch` | Deletes every resource group tagged `costguard=delete`. |
+| Logic App (Consumption) | `logic-intplat-killswitch` | Deletes every resource group tagged `costguard=delete`, then purges soft-deleted API Management services so they can be rebuilt under the same name right away. |
 | Role assignment | Contributor on the subscription | Lets the kill switch delete those resource groups. |
 
 ```mermaid
@@ -27,6 +27,10 @@ sequenceDiagram
     ARM-->>LA: Demo resource groups
     loop each tagged resource group
         LA->>ARM: DELETE resource group
+    end
+    LA->>ARM: List soft-deleted API Management services
+    loop each soft-deleted service
+        LA->>ARM: Purge
     end
 ```
 

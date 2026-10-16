@@ -69,6 +69,48 @@ resource killSwitch 'Microsoft.Logic/workflows@2019-05-01' = {
             }
           }
         }
+        // A deleted API Management service stays soft-deleted for 48 hours and blocks a rebuild
+        // under the same name. Purge it, so the pipelines can rebuild right away.
+        list_soft_deleted_api_management: {
+          type: 'Http'
+          runAfter: {
+            delete_each_resource_group: ['Succeeded']
+          }
+          inputs: {
+            method: 'GET'
+            uri: '${armBase}/subscriptions/${subscription().subscriptionId}/providers/Microsoft.ApiManagement/deletedservices'
+            queries: {
+              'api-version': '2022-08-01'
+            }
+            authentication: {
+              type: 'ManagedServiceIdentity'
+              audience: armAudience
+            }
+          }
+        }
+        purge_each_api_management: {
+          type: 'Foreach'
+          runAfter: {
+            list_soft_deleted_api_management: ['Succeeded']
+          }
+          foreach: '@body(\'list_soft_deleted_api_management\')?[\'value\']'
+          actions: {
+            purge_api_management: {
+              type: 'Http'
+              inputs: {
+                method: 'DELETE'
+                uri: '${armBase}@{items(\'purge_each_api_management\')?[\'id\']}'
+                queries: {
+                  'api-version': '2022-08-01'
+                }
+                authentication: {
+                  type: 'ManagedServiceIdentity'
+                  audience: armAudience
+                }
+              }
+            }
+          }
+        }
       }
       outputs: {}
     }

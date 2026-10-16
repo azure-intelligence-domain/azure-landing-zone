@@ -9,4 +9,10 @@ param blocks = [
     repoId: '1422370332'
     owner: 'platform-team'
   }
+  {
+    name: 'platform'
+    repo: 'integration-platform'
+    repoId: '1422449270'
+    owner: 'platform-team'
+  }
 ]
