@@ -6,7 +6,8 @@ Owned by the **platform team**. Deployed before anything else.
 
 | Folder | What | Status |
 |---|---|---|
-| [`guardrails/`](guardrails/) | €10/month budget, alerts and the kill switch | ✅ deployed |
+| [`bootstrap/`](bootstrap/) | The landing zone's own deploy identity (GitHub OIDC). Deployed once by hand. | ✅ deployed |
+| [`guardrails/`](guardrails/) | €10/month budget, alerts and the kill switch. Deployed by the [`guardrails`](.github/workflows/guardrails.yml) pipeline. | ✅ deployed |
 | `building-blocks/` | Per building block: resource group (tagged `costguard=delete`) and a deploy identity with rights on that group only | ⏳ |
 
 ```mermaid

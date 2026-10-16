@@ -13,8 +13,8 @@ param budgetAmount int = 10
 @description('Region for the guardrails resource group and kill switch.')
 param location string = 'belgiumcentral'
 
-@description('First day of the month the budget starts. Defaults to the current month.')
-param budgetStartDate string = '${utcNow('yyyy-MM')}-01'
+@description('First day of the month the budget started. Fixed: Azure rejects changing the start date of an existing budget.')
+param budgetStartDate string = '2026-10-01'
 
 var tags = {
   project: 'ai-intelligence-domain'

@@ -1,0 +1,82 @@
+name: guardrails
+
+# Pull requests: compile and lint only, no access to Azure.
+# main: what-if, then deploy, through the GitHub environment "azure"
+# (OIDC login as id-intplat-landing-zone; no stored passwords).
+
+on:
+  pull_request:
+    paths: ['guardrails/**', 'bootstrap/**', '.github/workflows/guardrails.yml']
+  push:
+    branches: [main]
+    paths: ['guardrails/**', '.github/workflows/guardrails.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: guardrails-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Compile and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile Bicep (any warning fails the build)
+        run: |
+          az bicep install --only-show-errors
+          bicep="$HOME/.azure/bin/bicep"
+          failed=0
+          for f in guardrails/main.bicep bootstrap/main.bicep; do
+            diagnostics=$("$bicep" build "$f" --stdout 2>&1 >/dev/null || true)
+            if echo "$diagnostics" | grep -qE ': (Warning|Error) '; then
+              echo "$diagnostics"
+              echo "::error file=$f::Bicep reported warnings or errors"
+              failed=1
+            else
+              echo "✅ $f"
+            fi
+          done
+          exit $failed
+
+  deploy:
+    name: What-if and deploy
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: azure
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: What-if
+        run: |
+          az deployment sub what-if \
+            --name guardrails \
+            --location belgiumcentral \
+            --template-file guardrails/main.bicep \
+            --parameters alertEmail="$ALERT_EMAIL"
+
+      - name: Deploy
+        run: |
+          az deployment sub create \
+            --name guardrails \
+            --location belgiumcentral \
+            --template-file guardrails/main.bicep \
+            --parameters alertEmail="$ALERT_EMAIL" \
+            --query properties.provisioningState -o tsv
