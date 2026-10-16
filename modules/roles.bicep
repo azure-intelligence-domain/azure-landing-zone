@@ -20,6 +20,7 @@ var dataRoles = [
   '8a0f0c08-91a1-4084-bc3d-661d67233fed' // Storage Queue Data Message Processor
   '19e7f393-937e-4f77-808e-94535e297925' // Storage Queue Data Reader
   'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
+  'b7e6dc6d-f1e8-4753-8033-0f276bb0955b' // Storage Blob Data Owner (a Function's own host storage)
   '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1' // Storage Blob Data Reader
 ]
 

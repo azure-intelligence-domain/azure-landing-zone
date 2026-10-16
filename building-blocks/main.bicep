@@ -98,6 +98,31 @@ module access '../modules/contributor.bicep' = [
   }
 ]
 
+// The platform registers every block's API in API Management and routes to it, so it may read
+// every building block's resource groups.
+module platformReads '../modules/reader.bicep' = [
+  for (g, i) in groupsOfBlocks: if (blocks[g.block].name != 'platform') {
+    name: 'platform-reads-${g.name}'
+    scope: resourceGroup(groups[i].name)
+    params: {
+      principalId: identities[indexOf(map(blocks, b => b.name), 'platform')].outputs.principalId
+      reason: 'Platform: reads building blocks to register their APIs and route to them.'
+    }
+  }
+]
+
+// Every block may read the platform's resource group (gateways, topics, Application Insights).
+module platformLookup '../modules/reader.bicep' = [
+  for (block, i) in blocks: if (block.name != 'platform') {
+    name: 'platform-lookup-${block.name}'
+    scope: resourceGroup('rg-intplat-platform')
+    params: {
+      principalId: identities[i].outputs.principalId
+      reason: 'Building block ${block.name}: finds the gateways, topics and Application Insights.'
+    }
+  }
+]
+
 // Lets each block look up other blocks' identities, e.g. to grant a consumer its queue.
 module identityLookup '../modules/reader.bicep' = [
   for (block, i) in blocks: {
