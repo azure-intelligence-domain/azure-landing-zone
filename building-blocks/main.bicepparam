@@ -81,4 +81,24 @@ param blocks = [
     owner: 'logistics-team'
     runtimeIdentity: true
   }
+  {
+    name: 'experience-api-webshop'
+    repo: 'experience-api-webshop'
+    repoId: '1423018174'
+    owner: 'channel-team'
+    runtimeIdentity: true
+  }
+  {
+    name: 'experience-api-customer-service'
+    repo: 'experience-api-customer-service'
+    repoId: '1423018231'
+    owner: 'channel-team'
+    runtimeIdentity: true
+  }
+  {
+    name: 'customer-portal'
+    repo: 'customer-portal'
+    repoId: '1423018334'
+    owner: 'channel-team'
+  }
 ]
